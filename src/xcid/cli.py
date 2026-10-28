@@ -26,6 +26,9 @@ def build_parser() -> argparse.ArgumentParser:
     filt.add_argument("--min-per-cell", type=int, default=2, help="Min SNP counts per cell to keep (default: 2).")
     filt.add_argument("--min-maf", type=float, default=0.1, help="Min minor allele frequency to keep a SNP (default: 0.1).")
 
+    phase = p.add_argument_group("Phasing")
+    phase.add_argument("--method", choices=["annealing", "rc2"], default="annealing", help="Optimizer for the main phasing and every bootstrap: simulated annealing, or the exact but slower RC2 MaxSAT solver from PySAT, which ignores the simulated annealing options (default: annealing).")
+
     sa = p.add_argument_group(
         "Simulated annealing (do not change these unless you know what you are doing)"
     )
@@ -68,6 +71,7 @@ def main(argv=None) -> int:
         n_boot=args.n_boot,
         n_jobs=args.n_jobs,
         verbose=args.verbose,
+        method=args.method,
         temp=args.temp,
         alpha=args.alpha,
         max_iter=args.max_iter,

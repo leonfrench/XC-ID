@@ -15,7 +15,8 @@ dependencies = ["numpy>=2.2",
                 "scipy>=1.15", 
                 "statsmodels>=0.14", 
                 "pysam>=0.23", 
-                "joblib>=1.5",  
+                "joblib>=1.5",
+                "python-sat>=1.8.dev0", # PySAT, for --method rc2; it only publishes .dev releases
                 ]
 
 [project.scripts]

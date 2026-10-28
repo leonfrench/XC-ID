@@ -17,7 +17,7 @@ XC-ID is available both as:
 XC-ID performs the following key steps:
 
 1. **Allele-specific read parsing** – extracts per-cell, per-SNP counts from STAR+WASP–aligned BAM files.  
-2. **Haplotype inference and phasing** – assigns each cell’s active X haplotype using a simulated annealing optimization.  
+2. **Haplotype inference and phasing** – assigns each cell’s active X haplotype using a simulated annealing optimization, or optionally an exact MaxSAT solver (RC2).  
 3. **Bootstrap-based confidence estimation** – quantifies assignment robustness through iterative resampling.
 
 The output table integrates with standard single-cell analysis frameworks (e.g., **Scanpy**, **Seurat**) metadata.  
@@ -89,6 +89,7 @@ You can also finetune the haplotype counts matrices by providing a filtered cell
 | BAM file(s) | `bam` | `--bam` | One or more STAR+WASP aligned BAM files |
 | Chromosome | `chrom` | `--chrom` | Chromosome name as it appears in the BAM/VCF (default: `chrX`) |
 | Filtered cells | `cells` | `--cells` | Allowed cell barcodes for constructing the counts matrices |
+| Phasing method | `method` | `--method` | `annealing` (default) or `rc2` for exact phasing, in the main phasing and every bootstrap (see below) |
 | Number of random initializations | `n_init` | `--n-init` | Default = 10 (main phasing; the lowest-energy configuration is kept) |
 | Number of bootstraps | `n_boot` | `--n-boot` | Default = 100 (each bootstrap reruns the phasing from a single random initialization) |
 | Number of parallel jobs | `n_jobs` | `--n-jobs` | Default = -1 (use all available cores); also parallelizes reading multiple BAM files |
@@ -101,6 +102,10 @@ See full parameter list with:
 ```bash
 xcid --help
 ```
+
+#### Exact phasing with RC2
+
+By default the phasing is found by simulated annealing, which is fast but can stop short of the best phasing, especially in the bootstraps, which each run from a single random start. With `--method rc2` (API: `method="rc2"`), XC-ID instead solves the main phasing and every bootstrap exactly with the RC2 MaxSAT solver from [PySAT](https://pysathq.github.io/), which maximizes the same objective and proves its result optimal. It is much slower: on the bundled example data, on one core, the main phasing takes about 40 s instead of 2 s and each bootstrap about 18 s instead of 0.4 s, so the default 100 bootstraps took about 8 minutes on 6 cores instead of 13 s. The simulated annealing options (`--temp`, `--alpha`, `--max-iter`, `--n-init`) have no effect with `rc2`. As X0 and X1 are direction agnostic, the two methods may swap the labels.
 
 ### Output
 

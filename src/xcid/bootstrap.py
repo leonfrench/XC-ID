@@ -1,6 +1,7 @@
 import numpy as np
 from joblib import Parallel, delayed
 from .simulated_annealing import simulated_annealing
+from .rc2 import rc2_phasing
 from .scoring import get_score
 
 
@@ -12,6 +13,7 @@ def bootstrap_once(k: int,
                    sa_kwargs=None,
                    min_per_cell=2,
                    rng=None,
+                   method="annealing",
                    ):
     '''Perform a single bootstrap iteration for haplotype confidence estimation.'''
 
@@ -23,12 +25,15 @@ def bootstrap_once(k: int,
     count_ref_sample = count_ref_sample[filter_mask, :]
     count_alt_sample = count_alt_sample[filter_mask, :]
 
-    # Run simulated annealing on the sampled counts
-    best_assignment_sample, _, _ = simulated_annealing(
-        counts_ref=count_ref_sample, counts_alt=count_alt_sample,
-        pos4phasing=pos4phasing, print_interval=False,
-        rng=rng, 
-        **sa_kwargs)  # use the filtered counts
+    # Run simulated annealing (or RC2) on the sampled counts
+    if method == "rc2":
+        best_assignment_sample, _, _ = rc2_phasing(count_ref_sample, count_alt_sample, rng=rng)
+    else:
+        best_assignment_sample, _, _ = simulated_annealing(
+            counts_ref=count_ref_sample, counts_alt=count_alt_sample,
+            pos4phasing=pos4phasing, print_interval=False,
+            rng=rng,
+            **sa_kwargs)  # use the filtered counts
 
     # but get the values for all cells
     score_sample = get_score(count_ref_sample, count_alt_sample, best_assignment_sample)
@@ -50,11 +55,13 @@ def bootstrap_variants(pos4phasing: list,
                         verbose=2,
                         min_score=0,
                         rng=None,
+                        method="annealing",
                         **sa_kwargs):
     """
     Parallel version of bootstrap_variants using joblib.ProcessPool (loky).
     counts_ref / counts_alt may be large NumPy arrays; they are mem-mapped
     read-only so workers don't copy gigabytes of data.
+    Each bootstrap is phased with simulated annealing, or with RC2 if method="rc2".
     """
     print(f'Performing {n_boot} bootstraps to determine cell confidence...')
 
@@ -84,6 +91,7 @@ def bootstrap_variants(pos4phasing: list,
             min_per_cell=min_per_cell,
             sa_kwargs=sa_kwargs,
             rng=np.random.default_rng(int(child_seeds[k])),
+            method=method,
         )
         for k in range(n_boot)
     )

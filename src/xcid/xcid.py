@@ -11,6 +11,7 @@ if __package__ is None or __package__ == "":
 from .io import load_vcf, read_bam, make_results, get_system_specs
 from .preprocess import get_pos_for_phasing, build_counts_matrix
 from .simulated_annealing import simulated_annealing
+from .rc2 import rc2_phasing
 from .bootstrap import bootstrap_variants
 from .escape import make_haplotype_matrices, make_escape_df
 
@@ -39,6 +40,9 @@ class XCID:
     n_boot: int = 100
     n_jobs: int = -1
     verbose: int = 2
+    # phasing for the main phasing and the bootstraps: "annealing" (simulated annealing) or
+    # "rc2" (exact, with the RC2 MaxSAT solver from PySAT)
+    method: str = "annealing"
 
     # simulated annealing parameters
     temp: Optional[float] = None # initial temperature
@@ -72,6 +76,8 @@ class XCID:
     escape_df: Optional[pd.DataFrame] = field(init=False, default=None)
 
     def __post_init__(self):
+        if self.method not in ("annealing", "rc2"):
+            raise ValueError(f'method must be "annealing" or "rc2", not {self.method!r}')
         self.rng = np.random.default_rng(self.seed) if self.seed is not None else np.random.default_rng()
         self._start_time = time.time()
 
@@ -105,20 +111,28 @@ class XCID:
         return self
 
     def assign_haplotypes(self) -> "XCID":
-        '''Assign haplotypes using simulated annealing.'''
+        '''Assign haplotypes using simulated annealing, or exactly with RC2 if method="rc2".'''
 
         self._require(self.counts_ref is not None, "Call load_data() first.")
 
-        self.best_assignment, self.best_cost, self.sa_score = simulated_annealing(
-            self.counts_ref,
-            self.counts_alt,
-            pos4phasing=self.pos4phasing,
-            temp=self.temp,
-            alpha=self.alpha,
-            max_iter=self.max_iter,
-            n_init=self.n_init,
-            rng=self.rng,
-        )
+        if self.method == "rc2":
+            self.best_assignment, self.best_cost, self.sa_score = rc2_phasing(
+                self.counts_ref,
+                self.counts_alt,
+                rng=self.rng,
+                verbose=True,
+            )
+        else:
+            self.best_assignment, self.best_cost, self.sa_score = simulated_annealing(
+                self.counts_ref,
+                self.counts_alt,
+                pos4phasing=self.pos4phasing,
+                temp=self.temp,
+                alpha=self.alpha,
+                max_iter=self.max_iter,
+                n_init=self.n_init,
+                rng=self.rng,
+            )
         return self
 
     def estimate_confidence(self) -> "XCID":
@@ -140,6 +154,7 @@ class XCID:
             max_iter=self.max_iter,
             n_init=self.n_init_bootstrap,
             rng=self.rng,
+            method=self.method,
         )
         return self
 
@@ -272,7 +287,7 @@ class XCID:
         self.load_data()
         print('==================================')
 
-        print("2. Assigning haplotypes via simulated annealing...")
+        print(f"2. Assigning haplotypes via {'RC2 (exact)' if self.method == 'rc2' else 'simulated annealing'}...")
         self.assign_haplotypes()
         print('==================================')
 
