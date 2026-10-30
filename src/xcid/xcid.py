@@ -37,7 +37,7 @@ class XCID:
     min_per_snp: int = 5 # minimum UMIs per SNP to consider for phasing
     min_per_cell: int = 2 # minimum SNP counts per cell to consider for phasing
     min_maf: float = 0.1 # minimum minor allele frequency to consider SNPs
-    n_boot: int = 100
+    n_boot: int = 100 # bootstraps; 0 skips them and labels cells by their score alone
     n_jobs: int = -1
     verbose: int = 2
     # phasing for the main phasing and the bootstraps: "annealing" (simulated annealing) or
@@ -139,6 +139,11 @@ class XCID:
         '''Estimate confidence of haplotype assignments via bootstrapping.'''
 
         self._require(self.best_assignment is not None, "Call assign_haplotypes() first.")
+
+        if self.n_boot == 0:
+            print("Skipping the bootstrap (n_boot=0): cells are labelled by their score alone, without p-values.")
+            self.score_array = np.empty((0, len(self.cell_ids)))
+            return self
 
         self.score_array = bootstrap_variants(
             pos4phasing=self.pos4phasing,

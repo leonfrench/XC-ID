@@ -263,7 +263,9 @@ def read_bam(bams = [],
 
 
 def make_results(cell_ids, score, score_array):
-    '''Create a results DataFrame with cell IDs, scores, p-values, adjusted p-values, and XCI status.'''
+    '''Create a results DataFrame with cell IDs, scores, p-values, adjusted p-values, and XCI status.
+    With no bootstraps (a score_array with no rows), cells are labelled by the sign of their score
+    alone and the p-values are NaN.'''
 
     def binom_pval(score, score_array):
         '''Calculate binomial p-values for each cell.'''
@@ -286,8 +288,12 @@ def make_results(cell_ids, score, score_array):
         _, p_adj, _, _ = multipletests(p_value, alpha=0.05, method='fdr_bh')
         return p_value, p_adj
 
-    p_value, p_adj = binom_pval(score, score_array)
-    conf = (p_adj < 0.05) & (score!=0)
+    if score_array.shape[0] == 0: # no bootstraps (n_boot=0): label each cell by its score alone
+        p_value, p_adj = np.full(len(score), np.nan), np.full(len(score), np.nan)
+        conf = score != 0
+    else:
+        p_value, p_adj = binom_pval(score, score_array)
+        conf = (p_adj < 0.05) & (score!=0)
 
     def _label(i: int, s: float) -> str:
         if not conf[i]:

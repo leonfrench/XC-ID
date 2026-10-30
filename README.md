@@ -91,7 +91,7 @@ You can also finetune the haplotype counts matrices by providing a filtered cell
 | Filtered cells | `cells` | `--cells` | Allowed cell barcodes for constructing the counts matrices |
 | Phasing method | `method` | `--method` | `annealing` (default) or `rc2` for exact phasing, in the main phasing and every bootstrap (see below) |
 | Number of random initializations | `n_init` | `--n-init` | Default = 10 (main phasing; the lowest-energy configuration is kept) |
-| Number of bootstraps | `n_boot` | `--n-boot` | Default = 100 (each bootstrap reruns the phasing from a single random initialization) |
+| Number of bootstraps | `n_boot` | `--n-boot` | Default = 100 (each bootstrap reruns the phasing from a single random initialization); 0 skips the bootstrap and labels cells by their score alone (see [Output](#output)) |
 | Number of parallel jobs | `n_jobs` | `--n-jobs` | Default = -1 (use all available cores); also parallelizes reading multiple BAM files |
 | Random seed | `seed` | `--seed` | Ensures reproducibility |
 | Min UMIs per SNP | `min_per_snp` | `--min-per-snp` | Minimum UMIs covering a SNP to keep it for phasing (default: 5) |
@@ -115,6 +115,8 @@ XC-ID outputs a results table with columns:
 3. **p_value:** p-values from a binomial test on bootstrapped scores
 4. **p_adj:** Benjamini-Hochberg adjusted p-values
 5. **XCI_status:** the final X chromosome calls from the algorithm (`X0`, `X1`, or `unknown`)
+
+With `--n-boot 0` (API: `n_boot=0`), no bootstraps are run: `XCI_status` comes from the sign of the score alone (`X0` if positive, `X1` if negative, `unknown` if 0), and `p_value` and `p_adj` are left empty (NaN).
 
 Note that X₀ or X₁ are direction agnostic. For genotyping, refer to the full manual for determining the exact REF/ALT SNP assignment for each X haplotype.
 
