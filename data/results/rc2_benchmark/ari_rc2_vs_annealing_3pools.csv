@@ -1,0 +1,10 @@
+pool,method,cells,unknown,ARI_called_cells,ARI_all_cells_unknown_as_label
+GSM5899873,"Annealing, 100 bootstraps",2675,100,0.9569,0.892
+GSM5899873,"Annealing, 0 bootstraps",2675,41,0.9299,0.903
+GSM5899873,"RC2, 0 bootstraps",2675,43,0.9254,0.8972
+GSM5899875,"Annealing, 100 bootstraps",3231,112,0.9122,0.8499
+GSM5899875,"Annealing, 0 bootstraps",3231,21,0.8746,0.8631
+GSM5899875,"RC2, 0 bootstraps",3231,22,0.8722,0.8602
+GSM5899878,"Annealing, 100 bootstraps",1836,47,0.9778,0.929
+GSM5899878,"Annealing, 0 bootstraps",1836,25,0.9585,0.9331
+GSM5899878,"RC2, 0 bootstraps",1836,26,0.9628,0.9362
